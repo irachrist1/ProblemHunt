@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useVisitorId } from '@/lib/visitor';
+import { normalizeAudienceInput, validateAudienceTokens } from '@/lib/audience';
 import { PROBLEM_CATEGORIES, FREQUENCY_OPTIONS, IMPACT_LABELS } from '@/lib/constants';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -73,21 +74,10 @@ export default function SubmitPage() {
   };
 
   const handleSubmit = async () => {
-    const audienceTokens = formData.audience
-      .split(/[,\n;]+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-
-    if (audienceTokens.length === 0) {
-      toast.error('Please provide at least one audience.');
-      return;
-    }
-    if (audienceTokens.length > 5) {
-      toast.error('Please provide at most 5 audiences.');
-      return;
-    }
-    if (audienceTokens.some((a) => a.length > 120)) {
-      toast.error('Each audience must be 120 characters or less.');
+    const audienceTokens = normalizeAudienceInput(formData.audience);
+    const audienceError = validateAudienceTokens(audienceTokens);
+    if (audienceError) {
+      toast.error(audienceError);
       return;
     }
 

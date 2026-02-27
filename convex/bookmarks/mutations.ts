@@ -1,6 +1,9 @@
 import { v, ConvexError } from 'convex/values';
 import { mutation } from '../_generated/server';
+import { Id } from '../_generated/dataModel';
 import { resolveActorUserId } from '../_lib/auth';
+import { assertEntitled } from '../_lib/entitlements';
+import { trackEvent } from '../_lib/analytics';
 
 /**
  * Toggle bookmark on a problem for the current actor (auth or guest).
@@ -12,6 +15,7 @@ export const toggleBookmark = mutation({
   },
   handler: async (ctx, args) => {
     const { userId } = await resolveActorUserId(ctx, args.visitorId);
+    await assertEntitled(ctx, userId, 'bookmark:toggle');
 
     const problem = await ctx.db.get(args.problemId);
     if (!problem) {
@@ -23,10 +27,15 @@ export const toggleBookmark = mutation({
       .withIndex('by_user_and_problem', (q) =>
         q.eq('userId', userId).eq('problemId', args.problemId),
       )
-      .first();
+      .collect();
 
-    if (existing) {
-      await ctx.db.delete(existing._id);
+    if (existing.length > 0) {
+      await Promise.all(existing.map((row) => ctx.db.delete(row._id)));
+      await trackEvent(ctx, 'bookmark_toggled', {
+        actorId: userId as Id<'users'>,
+        problemId: args.problemId,
+        metadata: { state: 'removed' },
+      });
       return { isBookmarked: false };
     }
 
@@ -34,6 +43,11 @@ export const toggleBookmark = mutation({
       userId,
       problemId: args.problemId,
       createdAt: Date.now(),
+    });
+    await trackEvent(ctx, 'bookmark_toggled', {
+      actorId: userId as Id<'users'>,
+      problemId: args.problemId,
+      metadata: { state: 'saved' },
     });
 
     return { isBookmarked: true };

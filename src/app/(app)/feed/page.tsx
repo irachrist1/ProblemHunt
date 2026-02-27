@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { useQuery } from 'convex/react';
+import { useEffect, useRef, useState } from 'react';
+import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
+import type { Id } from '../../../../convex/_generated/dataModel';
 import { ProblemCard, EmptyFeed } from '@/components/problems/ProblemCard';
 import { SkeletonFeed } from '@/components/ui/SkeletonCard';
 import { cn } from '@/lib/utils';
@@ -12,14 +13,30 @@ import type { FeedSort, ProblemWithMeta } from '@/types/domain';
 
 export default function FeedPage() {
   const [sort, setSort] = useState<FeedSort>('hot');
-  const [category, setCategory] = useState<string | undefined>();
+  const [category] = useState<string | undefined>();
   const { visitorId } = useVisitorId();
+  const trackFeedImpressions = useMutation(api.analytics.mutations.trackFeedImpressions);
+  const lastTrackedKeyRef = useRef<string>('');
 
   const problems = useQuery(api.problems.queries.list, {
     sort,
     category,
     visitorId: visitorId ?? undefined,
   });
+
+  useEffect(() => {
+    if (!problems || problems.length === 0) return;
+    const ids = (problems as ProblemWithMeta[]).slice(0, 20).map((problem) => problem._id);
+    const key = `${sort}:${category ?? 'all'}:${ids.join(',')}`;
+    if (lastTrackedKeyRef.current === key) return;
+    lastTrackedKeyRef.current = key;
+
+    void trackFeedImpressions({
+      problemIds: ids as Id<'problems'>[],
+      visitorId: visitorId ?? undefined,
+      source: 'feed',
+    });
+  }, [category, problems, sort, trackFeedImpressions, visitorId]);
 
   return (
     <div className="min-h-screen">

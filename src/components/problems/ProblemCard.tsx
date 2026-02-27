@@ -106,6 +106,7 @@ export function ProblemCard({ problem, variant = 'full', index = 0 }: ProblemCar
           downvoteCount={problem.downvoteCount ?? 0}
           userVoteType={problem.userVote?.type}
           onVote={handleVote}
+          disabled={problem.canVote === false}
         />
       </div>
 

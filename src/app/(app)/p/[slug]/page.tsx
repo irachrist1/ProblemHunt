@@ -11,6 +11,7 @@ import { formatRelativeTime, formatCount } from '@/lib/utils';
 import { useVisitorId } from '@/lib/visitor';
 import { pushRecentProblem } from '@/lib/recentProblems';
 import { UpvoteButton } from '@/components/problems/UpvoteButton';
+import { CommentThread } from '@/components/problems/CommentThread';
 import { StatusBadge } from '@/components/ui/Badge';
 import { TagChip } from '@/components/ui/TagChip';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -27,6 +28,7 @@ export default function ProblemDetailPage({ params }: Props) {
   const { slug } = use(params);
   const { visitorId } = useVisitorId();
   const problem = useQuery(api.problems.queries.getBySlug, { slug, visitorId: visitorId ?? undefined });
+  const currentUser = useQuery(api.users.queries.getCurrentUser);
   const toggleVote = useMutation(api.votes.mutations.toggleVote);
   const toggleBookmark = useMutation(api.bookmarks.mutations.toggleBookmark);
   const toast = useToast();
@@ -106,6 +108,7 @@ export default function ProblemDetailPage({ params }: Props) {
               downvoteCount={p.downvoteCount ?? 0}
               userVoteType={p.userVote?.type}
               onVote={handleVote}
+              disabled={p.canVote === false}
             />
           </div>
 
@@ -201,12 +204,10 @@ export default function ProblemDetailPage({ params }: Props) {
 
       {/* Comments section placeholder */}
       <div id="comments" className="border-t border-border-subtle px-5 py-6">
-        <h2 className="text-sm font-semibold text-text-primary mb-4">
-          Discussion ({p.commentCount})
-        </h2>
-        <p className="text-sm text-text-tertiary">
-          Comments coming soon...
-        </p>
+        <CommentThread
+          problemId={p._id as Id<'problems'>}
+          currentUserId={currentUser?._id ? String(currentUser._id) : null}
+        />
       </div>
     </div>
   );

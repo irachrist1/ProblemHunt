@@ -183,5 +183,16 @@ export async function resolveActorUserId(
     lastActiveAt: now,
   });
 
+  try {
+    await ctx.db.insert('analyticsEvents', {
+      event: 'guest_actor_created',
+      actorId: guestUserId,
+      metadata: { visitorIdPrefix: validVisitorId.slice(0, 8) },
+      createdAt: now,
+    });
+  } catch {
+    // Analytics is best-effort.
+  }
+
   return { userId: guestUserId, isAuthenticated: false };
 }

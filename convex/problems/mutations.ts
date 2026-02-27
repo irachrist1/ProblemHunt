@@ -7,6 +7,8 @@ import { requireRateLimit } from '../_lib/rateLimit';
 import { generateSlug } from '../_lib/slugs';
 import { calculatePainScore } from '../_lib/painScore';
 import { createProblemSchema, updateProblemSchema } from '../_lib/validation';
+import { assertEntitled } from '../_lib/entitlements';
+import { trackEvent } from '../_lib/analytics';
 
 /**
  * Create a new problem. Follows the standard mutation pattern:
@@ -47,6 +49,7 @@ export const createProblem = mutation({
 
     // 2. Rate limit
     await requireRateLimit(ctx, userId, 'problem:create');
+    await assertEntitled(ctx, userId, 'problem:create');
 
     // 3. Authorization — workspace check
     if (args.orgId) {
@@ -56,9 +59,11 @@ export const createProblem = mutation({
       await requireWorkspaceMembership(ctx, userId, args.orgId as unknown as string);
     }
 
-    // 4. Validate
+    // 4. Normalize + validate
+    const normalizedAudience = normalizeAudience(args.audience);
     const validatedResult = createProblemSchema.safeParse({
       ...args,
+      audience: normalizedAudience,
       orgId: args.orgId as string | undefined,
       tagIds: args.tagIds as string[] | undefined,
     });
@@ -73,6 +78,8 @@ export const createProblem = mutation({
 
     const now = Date.now();
     const slug = generateSlug(validated.title);
+    const boostUntil = now + 24 * 60 * 60 * 1000;
+    const effectiveAnonymous = validated.visibility === 'anonymous' ? true : validated.isAnonymous;
 
     // Initial pain score (no votes yet)
     const painScore = calculatePainScore({
@@ -99,14 +106,15 @@ export const createProblem = mutation({
       visibility: validated.visibility,
       orgId: args.orgId,
       authorId: userId as Id<'users'>,
-      isAnonymous: validated.isAnonymous,
-      anonymousHandle: validated.isAnonymous ? generateAnonymousHandle() : undefined,
+      isAnonymous: effectiveAnonymous,
+      anonymousHandle: effectiveAnonymous ? generateAnonymousHandle() : undefined,
       painScore,
       voteCount: 0,
       downvoteCount: 0,
       meTooCount: 0,
       commentCount: 0,
       solutionCount: 0,
+      boostUntil,
       slug,
       createdAt: now,
       updatedAt: now,
@@ -129,6 +137,11 @@ export const createProblem = mutation({
 
     // Update user's last active timestamp
     await ctx.db.patch(userId as Id<'users'>, { lastActiveAt: now });
+    await trackEvent(ctx, 'problem_created', {
+      actorId: userId as Id<'users'>,
+      problemId,
+      metadata: { visibility: validated.visibility },
+    });
 
     return { problemId, slug };
   },
@@ -280,4 +293,14 @@ const ANONYMOUS_ANIMALS = [
 function generateAnonymousHandle(): string {
   const animal = ANONYMOUS_ANIMALS[Math.floor(Math.random() * ANONYMOUS_ANIMALS.length)];
   return `Anonymous ${animal}`;
+}
+
+function normalizeAudience(audience: string[]): string[] {
+  const unique = new Set<string>();
+  for (const raw of audience) {
+    const normalized = raw.trim().replace(/\s+/g, ' ');
+    if (!normalized) continue;
+    unique.add(normalized);
+  }
+  return Array.from(unique);
 }

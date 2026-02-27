@@ -1,8 +1,100 @@
-import { v } from 'convex/values';
+import { v, ConvexError } from 'convex/values';
 import { query } from '../_generated/server';
 import { Doc, Id } from '../_generated/dataModel';
 import { QueryCtx } from '../_generated/server';
 import { resolveViewerUserId } from '../_lib/auth';
+import { computeHotFeedScore } from '../_lib/painScore';
+
+const FRESH_WINDOW_MS = 24 * 60 * 60 * 1000;
+const HOT_FRESH_RATIO = 0.35;
+
+const PROBLEM_STATUS = v.union(
+  v.literal('open'),
+  v.literal('exploring'),
+  v.literal('proposed'),
+  v.literal('exists'),
+  v.literal('solved'),
+);
+
+type ProblemStatus = 'open' | 'exploring' | 'proposed' | 'exists' | 'solved';
+
+function isDiscoverableVisibility(visibility: Doc<'problems'>['visibility']): boolean {
+  return visibility === 'public' || visibility === 'anonymous';
+}
+
+function filterProblems(
+  problems: Doc<'problems'>[],
+  filters: { category?: string; status?: ProblemStatus },
+): Doc<'problems'>[] {
+  return problems.filter((problem) => {
+    if (!isDiscoverableVisibility(problem.visibility)) return false;
+    if (filters.category && problem.category !== filters.category) return false;
+    if (filters.status && problem.status !== filters.status) return false;
+    return true;
+  });
+}
+
+function composeHotFeed(
+  freshLane: Doc<'problems'>[],
+  rankedLane: Doc<'problems'>[],
+  numItems: number,
+): Doc<'problems'>[] {
+  const uniqueFresh: Doc<'problems'>[] = [];
+  const seenInFresh = new Set<string>();
+  for (const item of freshLane) {
+    const key = String(item._id);
+    if (seenInFresh.has(key)) continue;
+    seenInFresh.add(key);
+    uniqueFresh.push(item);
+  }
+
+  const uniqueRanked: Doc<'problems'>[] = [];
+  const seenInRanked = new Set<string>();
+  for (const item of rankedLane) {
+    const key = String(item._id);
+    if (seenInRanked.has(key)) continue;
+    seenInRanked.add(key);
+    uniqueRanked.push(item);
+  }
+
+  const targetFresh = Math.min(uniqueFresh.length, Math.floor(numItems * HOT_FRESH_RATIO));
+  const selectedFresh = uniqueFresh.slice(0, targetFresh);
+
+  const freshIdSet = new Set(selectedFresh.map((p) => String(p._id)));
+  const selectedRanked = uniqueRanked.filter((p) => !freshIdSet.has(String(p._id)));
+
+  const results: Doc<'problems'>[] = [];
+  const resultSeen = new Set<string>();
+  let freshIdx = 0;
+  let rankedIdx = 0;
+
+  while (results.length < numItems && (freshIdx < selectedFresh.length || rankedIdx < selectedRanked.length)) {
+    const nextIndex = results.length;
+    const shouldTakeFresh =
+      freshIdx < selectedFresh.length &&
+      (rankedIdx >= selectedRanked.length ||
+        Math.floor(((nextIndex + 1) * targetFresh) / Math.max(1, numItems)) >
+          Math.floor((nextIndex * targetFresh) / Math.max(1, numItems)));
+
+    const candidate = shouldTakeFresh ? selectedFresh[freshIdx++] : selectedRanked[rankedIdx++];
+    if (!candidate) continue;
+    const key = String(candidate._id);
+    if (resultSeen.has(key)) continue;
+    resultSeen.add(key);
+    results.push(candidate);
+  }
+
+  const overflow = [...selectedRanked.slice(rankedIdx), ...selectedFresh.slice(freshIdx)];
+  for (const candidate of overflow) {
+    if (results.length >= numItems) break;
+    const key = String(candidate._id);
+    if (resultSeen.has(key)) continue;
+    resultSeen.add(key);
+    results.push(candidate);
+  }
+
+  return results;
+}
 
 async function enrichProblem(
   ctx: QueryCtx,
@@ -38,6 +130,7 @@ async function enrichProblem(
   return {
     ...problem,
     downvoteCount: problem.downvoteCount ?? 0,
+    canVote: viewerUserId ? problem.authorId !== viewerUserId : true,
     author: author
       ? {
           _id: author._id,
@@ -55,7 +148,6 @@ async function enrichProblem(
 
 /**
  * Get a single problem by slug.
- * Public problems visible to all; workspace problems require membership.
  */
 export const getBySlug = query({
   args: { slug: v.string(), visitorId: v.optional(v.string()) },
@@ -94,15 +186,7 @@ export const list = query({
   args: {
     sort: v.optional(v.union(v.literal('hot'), v.literal('new'), v.literal('top'))),
     category: v.optional(v.string()),
-    status: v.optional(
-      v.union(
-        v.literal('open'),
-        v.literal('exploring'),
-        v.literal('proposed'),
-        v.literal('exists'),
-        v.literal('solved'),
-      ),
-    ),
+    status: v.optional(PROBLEM_STATUS),
     visitorId: v.optional(v.string()),
     paginationOpts: v.optional(
       v.object({
@@ -113,45 +197,78 @@ export const list = query({
   },
   handler: async (ctx, args) => {
     const sort = args.sort ?? 'hot';
+    const now = Date.now();
     const numItems = args.paginationOpts?.numItems ?? 30;
-    let problems: Doc<'problems'>[];
+    const filters = { category: args.category, status: args.status };
 
-    if (sort === 'hot') {
-      problems = await ctx.db
-        .query('problems')
-        .withIndex('by_pain_score')
-        .order('desc')
-        .filter((q) => q.eq(q.field('visibility'), 'public'))
-        .take(numItems * 2);
-    } else if (sort === 'new') {
-      problems = await ctx.db
+    let selected: Doc<'problems'>[] = [];
+
+    if (sort === 'new') {
+      const candidates = await ctx.db
         .query('problems')
         .withIndex('by_created_at')
         .order('desc')
-        .filter((q) => q.eq(q.field('visibility'), 'public'))
-        .take(numItems * 2);
-    } else {
-      problems = await ctx.db
+        .take(Math.max(numItems * 4, 80));
+
+      selected = filterProblems(candidates, filters).slice(0, numItems);
+    } else if (sort === 'top') {
+      const candidates = await ctx.db
         .query('problems')
         .withIndex('by_pain_score')
         .order('desc')
-        .filter((q) => q.eq(q.field('visibility'), 'public'))
-        .take(numItems * 2);
+        .take(Math.max(numItems * 4, 80));
+
+      selected = filterProblems(candidates, filters).slice(0, numItems);
+    } else {
+      const candidateCount = Math.max(numItems * 6, 120);
+
+      const recentCandidates = await ctx.db
+        .query('problems')
+        .withIndex('by_created_at')
+        .order('desc')
+        .take(candidateCount);
+
+      const rankedCandidates = await ctx.db
+        .query('problems')
+        .withIndex('by_pain_score')
+        .order('desc')
+        .take(candidateCount);
+
+      const filteredRecent = filterProblems(recentCandidates, filters);
+      const filteredRanked = filterProblems(rankedCandidates, filters).sort((a, b) => {
+        const scoreA = computeHotFeedScore({
+          painScore: a.painScore,
+          voteCount: a.voteCount,
+          downvoteCount: a.downvoteCount ?? 0,
+          meTooCount: a.meTooCount,
+          commentCount: a.commentCount,
+          solutionCount: a.solutionCount,
+          createdAt: a.createdAt,
+          lastActivityAt: a.lastActivityAt,
+          boostUntil: a.boostUntil,
+          now,
+        });
+        const scoreB = computeHotFeedScore({
+          painScore: b.painScore,
+          voteCount: b.voteCount,
+          downvoteCount: b.downvoteCount ?? 0,
+          meTooCount: b.meTooCount,
+          commentCount: b.commentCount,
+          solutionCount: b.solutionCount,
+          createdAt: b.createdAt,
+          lastActivityAt: b.lastActivityAt,
+          boostUntil: b.boostUntil,
+          now,
+        });
+        return scoreB - scoreA;
+      });
+
+      const freshLane = filteredRecent.filter((problem) => now - problem.createdAt <= FRESH_WINDOW_MS);
+      selected = composeHotFeed(freshLane, filteredRanked, numItems);
     }
 
-    if (args.category) {
-      problems = problems.filter((p) => p.category === args.category);
-    }
-    if (args.status) {
-      problems = problems.filter((p) => p.status === args.status);
-    }
-
-    problems = problems.slice(0, numItems);
     const viewerUserId = await resolveViewerUserId(ctx, args.visitorId);
-
-    return Promise.all(
-      problems.map((problem) => enrichProblem(ctx, problem, viewerUserId)),
-    );
+    return Promise.all(selected.map((problem) => enrichProblem(ctx, problem, viewerUserId)));
   },
 });
 
@@ -169,13 +286,16 @@ export const trending = query({
       .order('desc')
       .filter((q) =>
         q.and(
-          q.eq(q.field('visibility'), 'public'),
+          q.or(
+            q.eq(q.field('visibility'), 'public'),
+            q.eq(q.field('visibility'), 'anonymous'),
+          ),
           q.gte(q.field('createdAt'), sevenDaysAgo),
         ),
       )
-      .take(5);
+      .take(10);
 
-    return problems.map((problem) => ({
+    return problems.slice(0, 5).map((problem) => ({
       ...problem,
       downvoteCount: problem.downvoteCount ?? 0,
     }));
@@ -183,32 +303,146 @@ export const trending = query({
 });
 
 /**
- * Search problems by title.
+ * Search problems by title + description.
  */
 export const search = query({
   args: {
     query: v.string(),
     category: v.optional(v.string()),
-    status: v.optional(v.string()),
+    status: v.optional(PROBLEM_STATUS),
     visitorId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    if (!args.query.trim()) return [];
+    const text = args.query.trim();
+    if (!text) return [];
 
-    const results = await ctx.db
+    const titleResults = await ctx.db
       .query('problems')
       .withSearchIndex('search_title_desc', (q) => {
-        let search = q.search('title', args.query);
+        let search = q.search('title', text);
         if (args.category) search = search.eq('category', args.category);
-        if (args.status) search = search.eq('status', args.status as any);
-        return search.eq('visibility', 'public');
+        if (args.status) search = search.eq('status', args.status);
+        return search;
       })
-      .take(20);
+      .take(40);
+
+    const descriptionResults = await ctx.db
+      .query('problems')
+      .withSearchIndex('search_description', (q) => {
+        let search = q.search('description', text);
+        if (args.category) search = search.eq('category', args.category);
+        if (args.status) search = search.eq('status', args.status);
+        return search;
+      })
+      .take(40);
+
+    const merged = new Map<string, Doc<'problems'>>();
+    for (const problem of [...titleResults, ...descriptionResults]) {
+      if (!isDiscoverableVisibility(problem.visibility)) continue;
+      const key = String(problem._id);
+      if (!merged.has(key)) {
+        merged.set(key, problem);
+      }
+    }
+
+    const now = Date.now();
+    const sorted = Array.from(merged.values())
+      .sort((a, b) => {
+        const scoreA = computeHotFeedScore({
+          painScore: a.painScore,
+          voteCount: a.voteCount,
+          downvoteCount: a.downvoteCount ?? 0,
+          meTooCount: a.meTooCount,
+          commentCount: a.commentCount,
+          solutionCount: a.solutionCount,
+          createdAt: a.createdAt,
+          lastActivityAt: a.lastActivityAt,
+          boostUntil: a.boostUntil,
+          now,
+        });
+        const scoreB = computeHotFeedScore({
+          painScore: b.painScore,
+          voteCount: b.voteCount,
+          downvoteCount: b.downvoteCount ?? 0,
+          meTooCount: b.meTooCount,
+          commentCount: b.commentCount,
+          solutionCount: b.solutionCount,
+          createdAt: b.createdAt,
+          lastActivityAt: b.lastActivityAt,
+          boostUntil: b.boostUntil,
+          now,
+        });
+        return scoreB - scoreA;
+      })
+      .slice(0, 20);
 
     const viewerUserId = await resolveViewerUserId(ctx, args.visitorId);
-    return Promise.all(
-      results.map((problem) => enrichProblem(ctx, problem, viewerUserId)),
-    );
+    return Promise.all(sorted.map((problem) => enrichProblem(ctx, problem, viewerUserId)));
+  },
+});
+
+/**
+ * Debug helper for ranking explainability (dev only).
+ */
+export const debugRanking = query({
+  args: {
+    limit: v.optional(v.number()),
+    category: v.optional(v.string()),
+    status: v.optional(PROBLEM_STATUS),
+  },
+  handler: async (ctx, args) => {
+    if (process.env.NODE_ENV === 'production') {
+      throw new ConvexError('debugRanking is disabled in production.');
+    }
+
+    const limit = Math.min(100, Math.max(5, args.limit ?? 20));
+    const now = Date.now();
+
+    const candidates = await ctx.db
+      .query('problems')
+      .withIndex('by_pain_score')
+      .order('desc')
+      .take(limit * 5);
+
+    const filtered = filterProblems(candidates, {
+      category: args.category,
+      status: args.status,
+    });
+
+    return filtered
+      .map((problem) => {
+        const hotScore = computeHotFeedScore({
+          painScore: problem.painScore,
+          voteCount: problem.voteCount,
+          downvoteCount: problem.downvoteCount ?? 0,
+          meTooCount: problem.meTooCount,
+          commentCount: problem.commentCount,
+          solutionCount: problem.solutionCount,
+          createdAt: problem.createdAt,
+          lastActivityAt: problem.lastActivityAt,
+          boostUntil: problem.boostUntil,
+          now,
+        });
+
+        return {
+          _id: problem._id,
+          slug: problem.slug,
+          title: problem.title,
+          visibility: problem.visibility,
+          createdAt: problem.createdAt,
+          lastActivityAt: problem.lastActivityAt,
+          painScore: problem.painScore,
+          hotScore,
+          voteCount: problem.voteCount,
+          downvoteCount: problem.downvoteCount ?? 0,
+          meTooCount: problem.meTooCount,
+          commentCount: problem.commentCount,
+          solutionCount: problem.solutionCount,
+          boostUntil: problem.boostUntil ?? problem.createdAt + FRESH_WINDOW_MS,
+        };
+      })
+      .sort((a, b) => b.hotScore - a.hotScore)
+      .slice(0, limit);
   },
 });
 

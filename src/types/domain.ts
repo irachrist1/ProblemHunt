@@ -70,7 +70,7 @@ export interface Problem {
   anonymousHandle?: string;
   painScore: number;
   voteCount: number;
-  downvoteCount?: number;
+  downvoteCount: number;
   meTooCount: number;
   commentCount: number;
   solutionCount: number;
@@ -89,7 +89,8 @@ export interface ProblemWithMeta extends Problem {
   author: AuthorStub | null;
   tags: (Tag | null)[];
   userVote: Vote | null;
-  isBookmarked?: boolean;
+  isBookmarked: boolean;
+  canVote?: boolean;
 }
 
 export interface SavedProblemItem {
@@ -98,7 +99,7 @@ export interface SavedProblemItem {
   slug: string;
   category: string;
   voteCount: number;
-  downvoteCount?: number;
+  downvoteCount: number;
   savedAt: number;
 }
 
@@ -108,7 +109,7 @@ export interface LikedProblemItem {
   slug: string;
   category: string;
   voteCount: number;
-  downvoteCount?: number;
+  downvoteCount: number;
   likedAt: number;
 }
 

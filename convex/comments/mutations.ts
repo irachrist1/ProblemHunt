@@ -5,6 +5,8 @@ import { Id } from '../_generated/dataModel';
 import { requireAuth } from '../_lib/auth';
 import { requireRateLimit } from '../_lib/rateLimit';
 import { createCommentSchema, reactToCommentSchema } from '../_lib/validation';
+import { assertEntitled } from '../_lib/entitlements';
+import { trackEvent } from '../_lib/analytics';
 
 /**
  * Create a comment or reply on a problem.
@@ -21,6 +23,7 @@ export const createComment = mutation({
 
     // 2. Rate limit
     await requireRateLimit(ctx, userId, 'comment:create');
+    await assertEntitled(ctx, userId as Id<'users'>, 'comment:create');
 
     // 3. Validate
     const validated = createCommentSchema.parse({
@@ -94,6 +97,12 @@ export const createComment = mutation({
         });
       }
     }
+
+    await trackEvent(ctx, 'comment_created', {
+      actorId: userId as Id<'users'>,
+      problemId: args.problemId,
+      metadata: { isReply: !!args.parentId },
+    });
 
     return { commentId };
   },

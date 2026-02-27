@@ -1,9 +1,12 @@
 import { v } from 'convex/values';
 import { ConvexError } from 'convex/values';
 import { mutation } from '../_generated/server';
+import { Id } from '../_generated/dataModel';
 import { resolveActorUserId } from '../_lib/auth';
 import { requireRateLimit } from '../_lib/rateLimit';
 import { computeUpdatedPainScore } from '../_lib/painScore';
+import { assertEntitled } from '../_lib/entitlements';
+import { trackEvent } from '../_lib/analytics';
 
 /**
  * Toggle an upvote or me_too on a problem.
@@ -24,6 +27,7 @@ export const toggleVote = mutation({
 
     // 2. Rate limit
     await requireRateLimit(ctx, userId, 'vote:toggle');
+    await assertEntitled(ctx, userId, 'vote:toggle');
 
     // Get problem
     const problem = await ctx.db.get(args.problemId);
@@ -31,7 +35,13 @@ export const toggleVote = mutation({
 
     // Can't vote on your own problem
     if (problem.authorId === userId) {
-      throw new ConvexError("You can't vote on your own problem.");
+      return {
+        voteCount: problem.voteCount,
+        downvoteCount: problem.downvoteCount ?? 0,
+        meTooCount: problem.meTooCount,
+        userVoteType: null,
+        blockedReason: 'self_vote',
+      };
     }
 
     // Validate impact rating for me_too
@@ -114,6 +124,12 @@ export const toggleVote = mutation({
       meTooCount: newMeTooCount,
       painScore: newPainScore,
       lastActivityAt: now,
+    });
+
+    await trackEvent(ctx, 'vote_cast', {
+      actorId: userId as Id<'users'>,
+      problemId: args.problemId,
+      metadata: { type: args.type },
     });
 
     // Send notifications only for positive vote events.
