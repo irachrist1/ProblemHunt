@@ -1,0 +1,50 @@
+{
+  "name": "problemhunt",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=20 <25"
+  },
+  "scripts": {
+    "dev": "npx -y node@22 node_modules/next/dist/bin/next dev",
+    "convex:dev": "npx -y node@22 node_modules/.bin/convex dev",
+    "dev:full": "npx -y node@22 node_modules/.bin/convex dev --run-sh \"npx -y node@22 node_modules/next/dist/bin/next dev\"",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "^1.2.22",
+    "@convex-dev/auth": "^0.0.87",
+    "@hookform/resolvers": "^3.9.1",
+    "@tanstack/react-virtual": "^3.11.2",
+    "@upstash/ratelimit": "^2.0.5",
+    "@upstash/redis": "^1.34.3",
+    "ai": "^4.3.9",
+    "clsx": "^2.1.1",
+    "convex": "^1.17.4",
+    "framer-motion": "^11.18.2",
+    "lucide-react": "^0.468.0",
+    "nanoid": "^5.0.9",
+    "next": "^15.3.3",
+    "posthog-js": "^1.201.1",
+    "posthog-node": "^4.5.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.54.2",
+    "tailwind-merge": "^2.6.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.27",
+    "eslint": "^9",
+    "eslint-config-next": "^15.3.3",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5"
+  }
+}
