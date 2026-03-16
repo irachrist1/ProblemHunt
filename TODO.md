@@ -21,18 +21,23 @@
 - [x] Clean 1px separators, hard boundaries
 - [x] Commit Step 3
 
-## Step 4: Revamp Feed Page
-- [ ] Clear visual hierarchy on cards (title primary, tags secondary, vote/poster tertiary)
-- [ ] Subtle hover state (border brightening or bg shift)
-- [ ] Vote button: spring scale { scale: 1.15 } on whileTap
-- [ ] Match percentage as top-right badge (only if > 50%)
-- [ ] Commit Step 4
+## Step 4: Revamp Feed Page ✅
+- [x] Clear visual hierarchy on cards (title primary, tags secondary, vote/poster tertiary)
+- [x] Subtle hover state (border brightening or bg shift)
+- [x] Vote button: spring scale { scale: 1.15 } on whileTap
+- [x] Match percentage as top-right badge (only if > 50%)
+- [x] Commit Step 4
 
-## Step 5: Check Every Other Page
-- [ ] Verify all routes load without errors
-- [ ] Ensure visual consistency across all pages
-- [ ] Fix orphaned or broken pages
-- [ ] Commit Step 5
+## Step 5: Check Every Other Page ✅
+- [x] Wrap all marketing sub-pages in MarketingShell (about, changelog, contact, privacy, terms, status)
+- [x] Verify all routes load without errors
+- [x] Ensure visual consistency across all pages (same tokens, same font, same spacing)
+- [x] Fix orphaned or broken pages (none found)
+- [x] Confirm no 404s from any nav/footer/sidebar link
+- [x] Commit Step 5
 
-## Step 6: Commit Strategy
-- [ ] One commit per step with clear messages
+## Step 6: Commit Strategy ✅
+- [x] Step 2 commit: `237789f` — "Step 2: Create /status page + fix footer link"
+- [x] Step 3 commit: `34a3875` — "Step 3: Revamp landing page from scratch"
+- [x] Step 4 commit: `30b04c8` — "Step 4: Revamp feed page and problem cards"
+- [x] Step 5 commit: `ffa0e4e` — "Step 5: Wrap marketing pages in MarketingShell, verify all routes"
