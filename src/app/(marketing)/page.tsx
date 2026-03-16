@@ -74,12 +74,12 @@ function HeroSection() {
       >
         {words.map((word, index) => {
           const isProblems = word === 'problems';
-          const suffix = index === words.length - 1 ? '' : ' ';
 
           return (
             <motion.span
               key={`${word}-${index}`}
               className="inline-block"
+              style={{ marginRight: index === words.length - 1 ? 0 : '0.25em' }}
               variants={{
                 hidden: reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 },
                 visible: {
@@ -106,7 +106,6 @@ function HeroSection() {
               ) : (
                 word
               )}
-              {suffix}
             </motion.span>
           );
         })}
@@ -200,7 +199,7 @@ function LiveFeedSection() {
   const reducedMotion = prefersReducedMotion ?? false;
 
   return (
-    <section id="explore" className="border-y border-border-subtle bg-bg-secondary px-6 py-20">
+    <section id="explore" className="border-y border-border-subtle px-6 py-20">
       <div className="max-w-2xl mx-auto text-center">
         <h2 className="text-2xl font-semibold text-text-primary mb-8">
           Problems being posted right now
@@ -340,8 +339,7 @@ const FOOTER_LINKS: Record<string, Array<{ label: string; href?: string }>> = {
     { label: 'Submit Problem', href: '/submit' },
   ],
   Developers: [
-    { label: 'API (coming soon)' },
-    { label: 'Changelog' },
+    { label: 'Changelog', href: '/changelog' },
     { label: 'Status' },
   ],
   Company: [
