@@ -1,21 +1,20 @@
 'use client';
 
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, Zap, BarChart3, Check } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Constants
+ * ───────────────────────────────────────────────────────────────────────────── */
 
 const HERO_HEADLINE = 'The place where the best problems find the builders who solve them.';
 
-function getInstantAwareTransition(
-  reducedMotion: boolean,
-  transition: Record<string, number | string>
-) {
-  return reducedMotion ? { duration: 0 } : transition;
-}
-
-// ---------- Nav Bar ----------
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Nav Bar
+ * ───────────────────────────────────────────────────────────────────────────── */
 
 function NavBar() {
   const [scrolled, setScrolled] = useState(false);
@@ -28,12 +27,13 @@ function NavBar() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 flex h-16 items-center border-b px-6 ${
-        scrolled ? 'border-border-subtle bg-bg-primary' : 'border-transparent bg-bg-primary'
+      className={`fixed top-0 left-0 right-0 z-50 flex h-16 items-center px-6 transition-colors duration-200 ${
+        scrolled
+          ? 'border-b border-border-subtle bg-bg-primary/95 backdrop-blur-sm'
+          : 'border-b border-transparent bg-bg-primary'
       }`}
     >
       <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
-        {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5">
           <div className="h-8 w-8 rounded-xl bg-problem-500 flex items-center justify-center">
             <span className="text-sm font-bold text-white">P</span>
@@ -41,8 +41,10 @@ function NavBar() {
           <span className="text-sm font-semibold text-text-primary">ProblemHunt</span>
         </Link>
 
-        {/* Actions */}
         <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/feed">Browse</Link>
+          </Button>
           <Button variant="ghost" size="sm" asChild>
             <Link href="/auth/sign-in">Sign In</Link>
           </Button>
@@ -52,57 +54,59 @@ function NavBar() {
   );
 }
 
-// ---------- Hero ----------
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Hero Section
+ *
+ * The headline is the largest element on the entire page.
+ * Word-by-word stagger animation re-triggers every time the section
+ * enters the viewport (whileInView, once: false).
+ * ───────────────────────────────────────────────────────────────────────────── */
 
 function HeroSection() {
   const prefersReducedMotion = useReducedMotion();
   const reducedMotion = prefersReducedMotion ?? false;
   const words = useMemo(() => HERO_HEADLINE.split(' '), []);
 
+  const containerVariants = {
+    hidden: {},
+    visible: {
+      transition: reducedMotion
+        ? { duration: 0 }
+        : { staggerChildren: 0.06 },
+    },
+  };
+
+  const wordVariants = {
+    hidden: reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: reducedMotion
+        ? { duration: 0 }
+        : { type: 'spring' as const, stiffness: 260, damping: 20 },
+    },
+  };
+
   return (
-    <section className="relative flex min-h-screen flex-col items-center justify-center border-b border-border-subtle px-6 pb-20 pt-40 text-center">
+    <section className="relative flex min-h-[100dvh] flex-col items-center justify-center px-6 pb-24 pt-40 text-center">
       <motion.h1
-        className="text-[56px] md:text-[72px] font-extrabold leading-none tracking-[-0.04em] max-w-4xl"
+        className="text-[52px] sm:text-[64px] md:text-[76px] font-extrabold leading-[1.02] tracking-[-0.04em] max-w-4xl"
         initial="hidden"
-        animate="visible"
-        variants={{
-          hidden: {},
-          visible: {
-            transition: reducedMotion ? { duration: 0 } : { staggerChildren: 0.06 },
-          },
-        }}
+        whileInView="visible"
+        viewport={{ once: false, amount: 0.3 }}
+        variants={containerVariants}
       >
         {words.map((word, index) => {
-          const isProblems = word === 'problems';
-
+          const isHighlighted = word === 'problems';
           return (
             <motion.span
               key={`${word}-${index}`}
               className="inline-block"
               style={{ marginRight: index === words.length - 1 ? 0 : '0.25em' }}
-              variants={{
-                hidden: reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 },
-                visible: {
-                  opacity: 1,
-                  y: 0,
-                  transition: getInstantAwareTransition(reducedMotion, {
-                    type: 'spring',
-                    stiffness: 280,
-                    damping: 22,
-                  }),
-                },
-              }}
+              variants={wordVariants}
             >
-              {isProblems ? (
-                <span
-                  style={{
-                    backgroundImage: 'linear-gradient(135deg, #F97316, #FBBF24)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                  }}
-                >
-                  {word}
-                </span>
+              {isHighlighted ? (
+                <span className="text-problem-500">{word}</span>
               ) : (
                 word
               )}
@@ -111,37 +115,56 @@ function HeroSection() {
         })}
       </motion.h1>
 
-      <p className="mt-6 text-xl text-text-secondary max-w-xl">
-        Browse a subreddit-style feed of real problems posted by real humans waiting to be solved.
-      </p>
+      <motion.p
+        className="mt-6 text-base text-text-tertiary max-w-lg leading-relaxed"
+        initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: false, amount: 0.5 }}
+        transition={reducedMotion ? { duration: 0 } : { delay: 0.5, duration: 0.5 }}
+      >
+        A community-driven feed of real problems posted by real people — waiting for builders to solve them.
+      </motion.p>
 
-      <div className="mt-8 flex items-center gap-3 flex-wrap justify-center">
+      <motion.div
+        className="mt-8 flex items-center gap-3 flex-wrap justify-center"
+        initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: false, amount: 0.5 }}
+        transition={reducedMotion ? { duration: 0 } : { delay: 0.7, duration: 0.4 }}
+      >
         <Button size="lg" asChild>
-          <Link href="/explore">Browse Problems →</Link>
+          <Link href="/explore">Browse Problems</Link>
         </Button>
-        <Button variant="ghost" size="lg" asChild>
-          <Link href="/submit">Add Problem</Link>
+        <Button variant="secondary" size="lg" asChild>
+          <Link href="/submit">Submit a Problem</Link>
         </Button>
-      </div>
-      <p className="mt-3 text-xs text-text-muted">No account required to browse</p>
+      </motion.div>
 
-      {/* Social proof logos */}
-      <div className="mt-10 flex items-center gap-8 opacity-40 flex-wrap justify-center">
-        {['Stripe', 'Vercel', 'Linear', 'Notion'].map((name) => (
-          <span key={name} className="text-sm font-semibold text-text-muted tracking-wider uppercase">
-            {name}
-          </span>
-        ))}
-      </div>
+      <motion.p
+        className="mt-3 text-xs text-text-muted"
+        initial={reducedMotion ? false : { opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: false, amount: 0.5 }}
+        transition={reducedMotion ? { duration: 0 } : { delay: 0.9, duration: 0.4 }}
+      >
+        No account required to browse
+      </motion.p>
 
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-text-muted">
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-text-muted animate-bounce">
         <ChevronDown className="h-5 w-5" />
       </div>
     </section>
   );
 }
 
-// ---------- Live Feed Preview ----------
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Live Feed Preview
+ *
+ * Cards appear one by one as if arriving in real time.
+ * staggerChildren: 0.12, spring { stiffness: 260, damping: 20 }
+ * Each card starts at { opacity: 0, y: 20 }.
+ * Re-triggers every time the section enters viewport.
+ * ───────────────────────────────────────────────────────────────────────────── */
 
 const DEMO_PROBLEMS = [
   {
@@ -172,22 +195,42 @@ const DEMO_PROBLEMS = [
     votes: 389,
     tag: 'B2B SaaS',
   },
+  {
+    id: 5,
+    title: 'Finding the right open-source library for a task still means reading 20 READMEs',
+    category: 'Developer Tools',
+    votes: 304,
+    tag: 'Discovery',
+  },
 ];
 
-function DemoProblemCard({ title, category, votes, tag }: (typeof DEMO_PROBLEMS)[0]) {
+function DemoProblemCard({
+  title,
+  category,
+  votes,
+  tag,
+}: {
+  title: string;
+  category: string;
+  votes: number;
+  tag: string;
+}) {
   return (
-    <div className="flex gap-3 rounded-xl border border-border-subtle bg-bg-primary p-4 shadow-[0_1px_0_rgba(255,255,255,0.04)]">
-      <div className="flex-shrink-0 flex flex-col items-center justify-center w-10 gap-0.5">
-        <div className="h-5 w-5 text-text-muted">▲</div>
-        <span className="text-sm font-semibold text-text-secondary">{votes}</span>
+    <div className="flex gap-4 rounded-lg border border-border-subtle p-4 transition-colors duration-150 hover:border-border-default">
+      {/* Vote column */}
+      <div className="flex flex-col items-center justify-center w-10 flex-shrink-0 gap-0.5">
+        <span className="text-xs text-text-muted">▲</span>
+        <span className="text-sm font-semibold tabular-nums text-text-secondary">{votes}</span>
       </div>
-      <div className="min-w-0">
+
+      {/* Content */}
+      <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-text-primary leading-snug">{title}</p>
-        <div className="mt-2 flex items-center gap-2">
-          <span className="text-xs text-text-muted bg-bg-tertiary px-2 py-0.5 rounded-full">
+        <div className="mt-2 flex items-center gap-2 flex-wrap">
+          <span className="text-2xs text-text-tertiary bg-bg-tertiary px-2 py-0.5 rounded-full">
             {category}
           </span>
-          <span className="text-xs text-text-muted">#{tag}</span>
+          <span className="text-2xs text-text-muted">#{tag}</span>
         </div>
       </div>
     </div>
@@ -198,45 +241,57 @@ function LiveFeedSection() {
   const prefersReducedMotion = useReducedMotion();
   const reducedMotion = prefersReducedMotion ?? false;
 
+  const containerVariants = {
+    hidden: {},
+    visible: {
+      transition: reducedMotion
+        ? { duration: 0 }
+        : { staggerChildren: 0.12 },
+    },
+  };
+
+  const cardVariants = {
+    hidden: reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: reducedMotion
+        ? { duration: 0 }
+        : { type: 'spring' as const, stiffness: 260, damping: 20 },
+    },
+  };
+
   return (
-    <section id="explore" className="border-y border-border-subtle px-6 py-20">
-      <div className="max-w-2xl mx-auto text-center">
-        <h2 className="text-2xl font-semibold text-text-primary mb-8">
+    <section className="px-6 py-24">
+      {/* 1px separator at top */}
+      <div className="max-w-2xl mx-auto mb-16 h-px bg-border-subtle" />
+
+      <div className="max-w-2xl mx-auto">
+        <h2 className="text-xl font-semibold text-text-primary mb-2 text-center">
           Problems being posted right now
         </h2>
-        <motion.div
-          className="flex flex-col gap-3"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
-          variants={{
-            hidden: {},
-            visible: {
-              transition: reducedMotion ? { duration: 0 } : { staggerChildren: 0.1 },
-            },
-          }}
-        >
-          {DEMO_PROBLEMS.map((p) => (
-            <motion.div
-              key={p.id}
-              variants={{
-                hidden: reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 },
-                visible: {
-                  opacity: 1,
-                  y: 0,
-                  transition: getInstantAwareTransition(reducedMotion, {
-                    type: 'spring',
-                    stiffness: 280,
-                    damping: 22,
-                  }),
-                },
-              }}
-            >
-              <DemoProblemCard {...p} />
-            </motion.div>
-          ))}
-        </motion.div>
-        <div className="mt-6">
+        <p className="text-sm text-text-muted text-center mb-10">
+          Real pain points from real people. Updated continuously.
+        </p>
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            className="flex flex-col gap-3"
+            key="feed-cards"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: false, amount: 0.15 }}
+            variants={containerVariants}
+          >
+            {DEMO_PROBLEMS.map((p) => (
+              <motion.div key={p.id} variants={cardVariants}>
+                <DemoProblemCard {...p} />
+              </motion.div>
+            ))}
+          </motion.div>
+        </AnimatePresence>
+
+        <div className="mt-8 text-center">
           <Button variant="secondary" asChild>
             <Link href="/explore">Browse all problems →</Link>
           </Button>
@@ -246,93 +301,62 @@ function LiveFeedSection() {
   );
 }
 
-// ---------- For Builders ----------
-
-function ForBuildersSection() {
-  return (
-    <section className="border-b border-border-subtle px-6 py-20">
-      <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-        <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-problem-500 mb-3 block">
-            For Builders
-          </span>
-          <h2 className="text-3xl font-bold text-text-primary mb-6">
-            Your next great side project is already waiting
-          </h2>
-          <ul className="space-y-4">
-            {[
-              { icon: Zap, label: 'AI-powered matching based on your skills and stack' },
-              { icon: BarChart3, label: 'Weekly curated digests of top-voted problems' },
-              { icon: Check, label: 'Filter by domain, tech stack, and severity' },
-            ].map(({ icon: Icon, label }) => (
-              <li key={label} className="flex items-start gap-3">
-                <div className="mt-0.5 h-5 w-5 rounded-full bg-problem-dim border border-problem-border flex items-center justify-center flex-shrink-0">
-                  <Icon className="h-3 w-3 text-problem-500" strokeWidth={2} />
-                </div>
-                <span className="text-sm text-text-secondary">{label}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-8">
-            <Button asChild>
-              <Link href="/explore">Start building →</Link>
-            </Button>
-          </div>
-        </div>
-
-        {/* Mockup */}
-        <div className="rounded-2xl border border-border-subtle bg-bg-primary p-4 space-y-2">
-          <div className="text-xs text-text-muted mb-3 font-medium">Matched for you</div>
-          {[
-            { title: 'Async decision tracking for remote teams', match: '94% match', votes: 847 },
-            { title: 'Dev onboarding still takes weeks', match: '88% match', votes: 612 },
-          ].map((p) => (
-            <div
-              key={p.title}
-              className="flex items-start gap-3 p-3 rounded-lg border border-border-subtle bg-bg-secondary hover:border-problem-border transition-colors cursor-pointer"
-            >
-              <div className="text-center min-w-[36px]">
-                <div className="text-xs text-text-muted">▲</div>
-                <div className="text-sm font-semibold text-text-primary">{p.votes}</div>
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-text-primary leading-snug">{p.title}</p>
-                <span className="text-xs text-problem-500 mt-1 block">{p.match}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ---------- Final CTA ----------
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Final CTA
+ *
+ * Typography is intentionally smaller than the hero to maintain hierarchy.
+ * ───────────────────────────────────────────────────────────────────────────── */
 
 function FinalCTA() {
+  const prefersReducedMotion = useReducedMotion();
+  const reducedMotion = prefersReducedMotion ?? false;
+
   return (
-    <section className="relative overflow-hidden border-b border-border-subtle px-6 py-32 text-center">
-      <h2 className="text-4xl md:text-5xl font-extrabold text-text-primary tracking-tight mb-4">
+    <section className="px-6 py-28 text-center">
+      {/* 1px separator at top */}
+      <div className="max-w-2xl mx-auto mb-16 h-px bg-border-subtle" />
+
+      <motion.h2
+        className="text-2xl md:text-3xl font-bold text-text-primary tracking-tight mb-4 max-w-xl mx-auto"
+        initial={reducedMotion ? false : { opacity: 0, y: 12 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: false, amount: 0.3 }}
+        transition={reducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 260, damping: 20 }}
+      >
         The best products start with the right problems.
-      </h2>
-      <p className="text-text-secondary text-base mb-8 max-w-md mx-auto">
-        Join thousands of builders and researchers sharing real problems. Free forever to browse.
-      </p>
-      <div className="flex items-center justify-center gap-3 flex-wrap">
+      </motion.h2>
+      <motion.p
+        className="text-sm text-text-tertiary mb-8 max-w-md mx-auto"
+        initial={reducedMotion ? false : { opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: false, amount: 0.3 }}
+        transition={reducedMotion ? { duration: 0 } : { delay: 0.15, duration: 0.4 }}
+      >
+        Join builders and researchers sharing real problems. Free forever to browse.
+      </motion.p>
+      <motion.div
+        className="flex items-center justify-center gap-3 flex-wrap"
+        initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: false, amount: 0.3 }}
+        transition={reducedMotion ? { duration: 0 } : { delay: 0.25, duration: 0.4 }}
+      >
         <Button size="lg" asChild>
-          <Link href="/explore">Browse the feed →</Link>
+          <Link href="/explore">Browse the feed</Link>
         </Button>
-        <Button variant="ghost" size="lg" asChild>
-          <Link href="/submit">Add Problem</Link>
+        <Button variant="secondary" size="lg" asChild>
+          <Link href="/submit">Submit a Problem</Link>
         </Button>
-      </div>
+      </motion.div>
     </section>
   );
 }
 
-// ---------- Footer ----------
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Footer
+ * ───────────────────────────────────────────────────────────────────────────── */
 
-const FOOTER_LINKS: Record<string, Array<{ label: string; href?: string }>> = {
+const FOOTER_LINKS: Record<string, Array<{ label: string; href: string }>> = {
   Product: [
     { label: 'Feed', href: '/feed' },
     { label: 'Explore', href: '/explore' },
@@ -352,7 +376,10 @@ const FOOTER_LINKS: Record<string, Array<{ label: string; href?: string }>> = {
 
 function Footer() {
   return (
-    <footer className="border-t border-border-subtle bg-bg-primary px-6 py-12">
+    <footer className="px-6 py-12">
+      {/* 1px separator at top */}
+      <div className="max-w-5xl mx-auto mb-10 h-px bg-border-subtle" />
+
       <div className="max-w-5xl mx-auto">
         <div className="grid gap-8 mb-10 sm:grid-cols-2 md:grid-cols-3">
           {Object.entries(FOOTER_LINKS).map(([section, links]) => (
@@ -363,29 +390,32 @@ function Footer() {
               <ul className="space-y-2">
                 {links.map(({ label, href }) => (
                   <li key={label}>
-                    {href ? (
-                      <Link
-                        href={href}
-                        className="text-sm text-text-secondary hover:text-text-primary transition-colors"
-                      >
-                        {label}
-                      </Link>
-                    ) : (
-                      <span className="text-sm text-text-secondary">{label}</span>
-                    )}
+                    <Link
+                      href={href}
+                      className="text-sm text-text-tertiary hover:text-text-primary transition-colors duration-150"
+                    >
+                      {label}
+                    </Link>
                   </li>
                 ))}
               </ul>
             </div>
           ))}
         </div>
-        <div className="pt-6 border-t border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3">
+
+        <div className="h-px bg-border-subtle mb-6" />
+
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-text-muted">
             © {new Date().getFullYear()} ProblemHunt. All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-xs text-text-muted">
-            <Link href="/privacy" className="hover:text-text-secondary transition-colors">Privacy</Link>
-            <Link href="/terms" className="hover:text-text-secondary transition-colors">Terms</Link>
+            <Link href="/privacy" className="hover:text-text-secondary transition-colors">
+              Privacy
+            </Link>
+            <Link href="/terms" className="hover:text-text-secondary transition-colors">
+              Terms
+            </Link>
           </div>
         </div>
       </div>
@@ -393,7 +423,13 @@ function Footer() {
   );
 }
 
-// ---------- Page ----------
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Page
+ *
+ * Single background color for the entire page: bg-bg-primary (#0A0A0B).
+ * No section background shifts. No gradients between sections.
+ * Sections separated by spacing and 1px lines only.
+ * ───────────────────────────────────────────────────────────────────────────── */
 
 export default function LandingPage() {
   return (
@@ -401,7 +437,6 @@ export default function LandingPage() {
       <NavBar />
       <HeroSection />
       <LiveFeedSection />
-      <ForBuildersSection />
       <FinalCTA />
       <Footer />
     </main>

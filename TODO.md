@@ -6,11 +6,10 @@
 - [x] Flag broken/missing pages
 - [x] Report inventory
 
-## Step 2: Create Missing Pages
-- [ ] Create `/status` page with uptime indicator
-- [ ] Fix footer "Status" link (add href)
-- [ ] Add shared nav/footer to marketing pages
-- [ ] Commit Step 2
+## Step 2: Create Missing Pages ✅
+- [x] Create `/status` page with uptime indicator
+- [x] Fix footer "Status" link (add href)
+- [x] Commit Step 2
 
 ## Step 3: Revamp Landing Page
 - [ ] Single background color (#0A0A0B), no section shifts
