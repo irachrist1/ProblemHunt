@@ -59,16 +59,27 @@ export const toastVariants = {
 
 /** Feed item stagger */
 export const feedItemVariants = {
-  hidden: { opacity: 0, y: 8 },
+  hidden: { opacity: 0, y: 24, scale: 0.985, filter: 'blur(10px)' },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
+    scale: 1,
+    filter: 'blur(0px)',
     transition: {
-      delay: Math.min(i * 0.03, 0.24), // max 8 items staggered, beyond instant
-      duration: 0.2,
-      ease: [0.0, 0.0, 0.2, 1.0],
+      ...springSmooth,
+      mass: 0.85,
+      delay: Math.min(i * 0.045, 0.3),
     },
   }),
+  exit: {
+    opacity: 0,
+    y: 12,
+    scale: 0.99,
+    transition: {
+      duration: 0.16,
+      ease: [0.4, 0, 1, 1],
+    },
+  },
 };
 
 export const feedContainerVariants = {
