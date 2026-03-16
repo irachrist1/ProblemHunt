@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronDown, TrendingUp, Zap, Users, BarChart3, Check } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -18,10 +18,8 @@ function NavBar() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 h-16 flex items-center px-6 transition-all duration-200 ${
-        scrolled
-          ? 'bg-bg-primary/80 backdrop-blur-[12px] border-b border-border-subtle'
-          : 'bg-transparent'
+      className={`fixed top-0 left-0 right-0 z-50 flex h-16 items-center border-b px-6 ${
+        scrolled ? 'border-border-subtle bg-bg-primary' : 'border-transparent bg-bg-primary'
       }`}
     >
       <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
@@ -48,13 +46,7 @@ function NavBar() {
 
 function HeroSection() {
   return (
-    <section
-      className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-40 pb-20 text-center"
-      style={{
-        background:
-          'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(249,115,22,0.12), transparent)',
-      }}
-    >
+    <section className="relative flex min-h-screen flex-col items-center justify-center border-b border-border-subtle px-6 pb-20 pt-40 text-center">
       {/* Eyebrow badge */}
       {/* <div className="mb-6 inline-flex items-center gap-1.5 rounded-full bg-problem-dim border border-problem-border px-3 py-1 text-xs text-problem-500 animate-pulse">
         Now in Beta · Join 2,400+ builders →
@@ -145,7 +137,7 @@ const DEMO_PROBLEMS = [
 
 function DemoProblemCard({ title, category, votes, tag }: (typeof DEMO_PROBLEMS)[0]) {
   return (
-    <div className="flex gap-3 p-4 rounded-xl border border-border-subtle bg-bg-secondary">
+    <div className="flex gap-3 rounded-xl border border-border-subtle bg-bg-primary p-4">
       <div className="flex-shrink-0 flex flex-col items-center justify-center w-10 gap-0.5">
         <div className="h-5 w-5 text-text-muted">▲</div>
         <span className="text-sm font-semibold text-text-secondary">{votes}</span>
@@ -180,22 +172,15 @@ function LiveFeedSection() {
   ];
 
   return (
-    <section id="explore" className="bg-bg-secondary py-20 px-6">
+    <section id="explore" className="border-y border-border-subtle bg-bg-secondary px-6 py-20">
       <div className="max-w-2xl mx-auto text-center">
         <h2 className="text-2xl font-semibold text-text-primary mb-8">
           Problems being posted right now
         </h2>
-        <div className="relative flex flex-col gap-3">
+        <div className="flex flex-col gap-3">
           {visible.map((p) => (
             <DemoProblemCard key={p.id} {...p} />
           ))}
-          {/* Fade-out mask */}
-          <div
-            className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"
-            style={{
-              background: 'linear-gradient(to bottom, transparent 0%, var(--bg-secondary) 100%)',
-            }}
-          />
         </div>
         <div className="mt-6">
           <Button variant="secondary" asChild>
@@ -211,7 +196,7 @@ function LiveFeedSection() {
 
 function ForBuildersSection() {
   return (
-    <section className="py-20 px-6 bg-bg-secondary">
+    <section className="border-b border-border-subtle px-6 py-20">
       <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-16 items-center">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-problem-500 mb-3 block">
@@ -272,7 +257,7 @@ function ForBuildersSection() {
 
 function ForOrgsSection() {
   return (
-    <section className="py-20 px-6">
+    <section className="border-b border-border-subtle px-6 py-20">
       <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-16 items-center">
         {/* Mockup left */}
         <div className="rounded-2xl border border-border-subtle bg-bg-primary p-4 order-last md:order-first">
@@ -349,12 +334,7 @@ function ForOrgsSection() {
 
 function FinalCTA() {
   return (
-    <section
-      className="py-32 px-6 text-center relative overflow-hidden"
-      style={{
-        background: 'radial-gradient(ellipse 60% 60% at 50% 50%, rgba(249,115,22,0.08), transparent)',
-      }}
-    >
+    <section className="relative overflow-hidden border-b border-border-subtle px-6 py-32 text-center">
       <h2 className="text-4xl md:text-5xl font-extrabold text-text-primary tracking-tight mb-4">
         The best products start with the right problems.
       </h2>
