@@ -93,7 +93,7 @@ export function Sidebar({ user, unreadCount = 0, onSignOut }: SidebarProps) {
       </nav>
 
       {/* User section */}
-      <div className="mt-auto border-t border-border-subtle p-3">
+      <div className="mt-4 border-t border-border-subtle p-3">
         {user ? (
           <div className="flex items-center gap-3">
             <Link
