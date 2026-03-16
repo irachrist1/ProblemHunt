@@ -164,17 +164,6 @@ export default function FeedPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="sticky top-0 z-10 border-b border-border-subtle bg-bg-primary px-5 py-3">
-        <p className="text-sm font-medium text-text-primary">
-          {feedPreferences ? 'Recommended for you' : 'Popular problems'}
-        </p>
-        <p className="mt-1 text-xs text-text-muted">
-          {feedPreferences
-            ? 'Ranked from your saved tags, domain affinity, severity, and freshness.'
-            : 'Ranked from votes, severity, and freshness.'}
-        </p>
-      </div>
-
       <div className="divide-y-0">
         {problems === undefined ? (
           <SkeletonFeed count={8} />

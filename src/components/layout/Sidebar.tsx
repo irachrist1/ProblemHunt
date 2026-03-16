@@ -55,7 +55,7 @@ export function Sidebar({ user, unreadCount = 0, onSignOut }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-2 py-2" aria-label="Main navigation">
+      <nav className="px-2 py-2" aria-label="Main navigation">
         <ul className="flex flex-col gap-0.5">
           {NAV_ITEMS.map(({ href, label, Icon }) => {
             const isActive = pathname.startsWith(href);
@@ -93,7 +93,7 @@ export function Sidebar({ user, unreadCount = 0, onSignOut }: SidebarProps) {
       </nav>
 
       {/* User section */}
-      <div className="border-t border-border-subtle p-3">
+      <div className="mt-auto border-t border-border-subtle p-3">
         {user ? (
           <div className="flex items-center gap-3">
             <Link

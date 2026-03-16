@@ -97,15 +97,9 @@ export default function NotificationsPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-border-subtle px-5 py-4">
-        <div>
-          <h1 className="text-base font-semibold text-text-primary">Notifications</h1>
-          {unreadCount > 0 && (
-            <p className="text-xs text-text-tertiary">{unreadCount} unread</p>
-          )}
-        </div>
-        {unreadCount > 0 && (
+      {/* Mark all read — only shown when there are unread notifications */}
+      {unreadCount > 0 && (
+        <div className="flex items-center justify-end border-b border-border-subtle px-5 py-2">
           <Button
             variant="ghost"
             size="sm"
@@ -115,8 +109,8 @@ export default function NotificationsPage() {
             <CheckCheck className="h-3.5 w-3.5" strokeWidth={1.5} />
             Mark all read
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* List */}
       {notifications === undefined ? (
