@@ -60,6 +60,11 @@ export function ProblemCard({ problem, variant = 'full', index = 0 }: ProblemCar
     }
   };
 
+  const matchPercentage = (problem as any).matchPercentage;
+  const showMatch = matchPercentage && matchPercentage > 50;
+
+  /* ── Compact variant ─────────────────────────────────────────────────── */
+
   if (variant === 'compact') {
     return (
       <Link
@@ -90,15 +95,27 @@ export function ProblemCard({ problem, variant = 'full', index = 0 }: ProblemCar
     );
   }
 
-  // Full variant
+  /* ── Full variant ────────────────────────────────────────────────────── */
+
   return (
     <article
       className={cn(
-        'group relative flex gap-4 border-b border-border-subtle',
-        'bg-bg-secondary hover:bg-bg-tertiary transition-colors duration-150',
+        'group relative flex gap-4',
+        'border-b border-border-subtle',
         'px-5 py-5',
+        // Subtle hover: slight border brightening + background shift
+        'hover:bg-[rgba(255,255,255,0.015)] transition-all duration-150',
       )}
     >
+      {/* Match percentage badge — top right corner */}
+      {showMatch && (
+        <div className="absolute top-3 right-4 z-10">
+          <span className="inline-flex items-center rounded-full bg-problem-dim border border-problem-border px-2 py-0.5 text-2xs font-semibold text-problem-400 tabular-nums">
+            {matchPercentage}% match
+          </span>
+        </div>
+      )}
+
       {/* Vote button */}
       <div className="flex-shrink-0">
         <UpvoteButton
@@ -111,12 +128,12 @@ export function ProblemCard({ problem, variant = 'full', index = 0 }: ProblemCar
       </div>
 
       {/* Content */}
-      <div className="flex flex-1 flex-col gap-2.5 min-w-0">
-        {/* Title */}
+      <div className="flex flex-1 flex-col gap-2 min-w-0">
+        {/* PRIMARY: Title — largest and most prominent */}
         <Link href={`/p/${problem.slug}`} className="group/title">
           <h2
             className={cn(
-              'text-base font-semibold text-text-primary leading-snug',
+              'text-[15px] font-semibold text-text-primary leading-snug',
               'group-hover/title:text-problem-400 transition-colors duration-150',
             )}
           >
@@ -124,20 +141,16 @@ export function ProblemCard({ problem, variant = 'full', index = 0 }: ProblemCar
           </h2>
         </Link>
 
-        {/* Description */}
+        {/* Description preview */}
         {problem.description && (
-          <p className="text-sm text-text-secondary line-clamp-2 leading-relaxed">
+          <p className="text-sm text-text-secondary/80 line-clamp-2 leading-relaxed">
             {problem.description}
           </p>
         )}
 
-        {problem.matchPercentage && problem.matchPercentage > 50 ? (
-          <p className="text-xs font-medium text-problem-500">{problem.matchPercentage}% match</p>
-        ) : null}
-
-        {/* Tags */}
+        {/* SECONDARY: Tags */}
         {problem.tags && problem.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5 mt-0.5">
             {problem.tags.slice(0, 4).map((tag) =>
               tag ? (
                 <Link key={tag._id} href={`/explore?tag=${tag.slug}`}>
@@ -148,44 +161,44 @@ export function ProblemCard({ problem, variant = 'full', index = 0 }: ProblemCar
           </div>
         )}
 
-        {/* Meta row */}
-        <div className="flex items-center gap-1 flex-wrap text-xs text-text-tertiary">
+        {/* TERTIARY: Meta row — vote count, poster, timestamps */}
+        <div className="flex items-center gap-1.5 flex-wrap text-xs text-text-muted mt-1">
           {/* Author */}
           {problem.author && !problem.isAnonymous ? (
             <Link
               href={`/u/${problem.author.username}`}
-              className="flex items-center gap-1.5 hover:text-text-secondary transition-colors"
+              className="flex items-center gap-1.5 hover:text-text-tertiary transition-colors"
             >
               <UserAvatar
                 name={problem.author.name}
                 avatarUrl={problem.author.avatarUrl}
                 size="xs"
               />
-              <span>@{problem.author.username}</span>
+              <span className="text-text-muted">@{problem.author.username}</span>
             </Link>
           ) : (
-            <span>{problem.anonymousHandle ?? 'Anonymous'}</span>
+            <span className="text-text-muted">{problem.anonymousHandle ?? 'Anonymous'}</span>
           )}
 
-          <span className="text-text-muted">·</span>
-          <span>{formatRelativeTime(problem.createdAt)}</span>
+          <span className="text-text-muted/50">·</span>
+          <span className="text-text-muted">{formatRelativeTime(problem.createdAt)}</span>
 
           {problem.meTooCount > 0 && (
             <>
-              <span className="text-text-muted">·</span>
-              <span className="flex items-center gap-1">
+              <span className="text-text-muted/50">·</span>
+              <span className="flex items-center gap-1 text-text-muted">
                 <Users className="h-3 w-3" strokeWidth={1.5} />
-                {formatCount(problem.meTooCount)} also have this
+                {formatCount(problem.meTooCount)}
               </span>
             </>
           )}
 
           {problem.commentCount > 0 && (
             <>
-              <span className="text-text-muted">·</span>
+              <span className="text-text-muted/50">·</span>
               <Link
                 href={`/p/${problem.slug}#comments`}
-                className="flex items-center gap-1 hover:text-text-secondary transition-colors"
+                className="flex items-center gap-1 text-text-muted hover:text-text-tertiary transition-colors"
               >
                 <MessageCircle className="h-3 w-3" strokeWidth={1.5} />
                 {formatCount(problem.commentCount)}
@@ -195,8 +208,8 @@ export function ProblemCard({ problem, variant = 'full', index = 0 }: ProblemCar
 
           {problem.solutionCount > 0 && (
             <>
-              <span className="text-text-muted">·</span>
-              <span className="text-solution-500">
+              <span className="text-text-muted/50">·</span>
+              <span className="text-solution-500 text-2xs">
                 {problem.solutionCount} solution{problem.solutionCount !== 1 ? 's' : ''}
               </span>
             </>
@@ -207,10 +220,10 @@ export function ProblemCard({ problem, variant = 'full', index = 0 }: ProblemCar
               type="button"
               onClick={handleToggleSave}
               className={cn(
-                'inline-flex items-center gap-1 rounded-sm border px-2 py-1 transition-colors',
+                'inline-flex items-center gap-1 rounded-sm border px-2 py-1 text-2xs transition-colors',
                 problem.isBookmarked
                   ? 'border-problem-border bg-problem-dim text-problem-500'
-                  : 'border-border-subtle text-text-muted hover:border-border-default hover:text-text-secondary',
+                  : 'border-border-subtle text-text-muted hover:border-border-default hover:text-text-tertiary',
               )}
               aria-label={problem.isBookmarked ? 'Unsave problem' : 'Save problem'}
             >
@@ -225,7 +238,7 @@ export function ProblemCard({ problem, variant = 'full', index = 0 }: ProblemCar
   );
 }
 
-// ─── Empty State ─────────────────────────────────────────────────────────────
+/* ─── Empty State ─────────────────────────────────────────────────────────── */
 
 export function EmptyFeed() {
   return (

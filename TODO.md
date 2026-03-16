@@ -11,15 +11,15 @@
 - [x] Fix footer "Status" link (add href)
 - [x] Commit Step 2
 
-## Step 3: Revamp Landing Page
-- [ ] Single background color (#0A0A0B), no section shifts
-- [ ] Clear typography hierarchy (hero largest)
-- [ ] Feed preview cards: AnimatePresence, staggerChildren: 0.12, spring { stiffness: 260, damping: 20 }, whileInView with viewport={{ once: false, amount: 0.15 }}
-- [ ] Hero word animation: whileInView re-trigger (not animate on mount)
-- [ ] Respect prefers-reduced-motion on all animations
-- [ ] Remove "FOR BUILDERS" section entirely
-- [ ] Clean 1px separators, hard boundaries
-- [ ] Commit Step 3
+## Step 3: Revamp Landing Page ✅
+- [x] Single background color (#0A0A0B), no section shifts
+- [x] Clear typography hierarchy (hero largest)
+- [x] Feed preview cards: AnimatePresence, staggerChildren: 0.12, spring { stiffness: 260, damping: 20 }, whileInView with viewport={{ once: false, amount: 0.15 }}
+- [x] Hero word animation: whileInView re-trigger (not animate on mount)
+- [x] Respect prefers-reduced-motion on all animations
+- [x] Remove "FOR BUILDERS" section entirely
+- [x] Clean 1px separators, hard boundaries
+- [x] Commit Step 3
 
 ## Step 4: Revamp Feed Page
 - [ ] Clear visual hierarchy on cards (title primary, tags secondary, vote/poster tertiary)

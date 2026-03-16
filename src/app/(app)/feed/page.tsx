@@ -7,7 +7,6 @@ import { api } from '../../../../convex/_generated/api';
 import type { Id } from '../../../../convex/_generated/dataModel';
 import { ProblemCard, EmptyFeed } from '@/components/problems/ProblemCard';
 import { SkeletonFeed } from '@/components/ui/SkeletonCard';
-import { feedItemVariants, springSmooth } from '@/lib/motion';
 import { useVisitorId } from '@/lib/visitor';
 import type { ProblemWithMeta } from '@/types/domain';
 
@@ -188,12 +187,20 @@ export default function FeedPage() {
                 key={problem._id}
                 layout
                 custom={i}
-                initial={reducedMotion ? false : 'hidden'}
-                whileInView={reducedMotion ? undefined : 'visible'}
-                viewport={{ once: true, amount: 0.18, margin: '0px 0px -8% 0px' }}
-                variants={feedItemVariants}
-                transition={springSmooth}
-                style={{ willChange: reducedMotion ? 'auto' : 'transform, opacity, filter' }}
+                initial={reducedMotion ? false : { opacity: 0, y: 20 }}
+                whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={
+                  reducedMotion
+                    ? { duration: 0 }
+                    : {
+                        type: 'spring',
+                        stiffness: 260,
+                        damping: 20,
+                        delay: Math.min(i * 0.06, 0.3),
+                      }
+                }
+                style={{ willChange: reducedMotion ? 'auto' : 'transform, opacity' }}
               >
                 <ProblemCard problem={problem} index={i} />
               </motion.div>

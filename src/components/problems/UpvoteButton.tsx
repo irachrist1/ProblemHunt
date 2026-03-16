@@ -45,7 +45,8 @@ function VoteActionButton({
       onClick={onPress}
       disabled={disabled || isLoading}
       animate={animating ? { scale: [1, 0.9, 1.1, 1] } : {}}
-      transition={animating ? { duration: 0.25, ease: [0.34, 1.56, 0.64, 1] } : springSnappy}
+      whileTap={{ scale: 1.15 }}
+      transition={animating ? { duration: 0.25, ease: [0.34, 1.56, 0.64, 1] } : { type: 'spring', stiffness: 400, damping: 15 }}
       className={cn(
         'flex h-8 w-14 items-center justify-center gap-1 rounded-sm border',
         'transition-colors duration-150',
