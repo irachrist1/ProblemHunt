@@ -34,6 +34,20 @@ function filterProblems(
   });
 }
 
+function dedupeProblems(problems: Doc<'problems'>[]): Doc<'problems'>[] {
+  const uniqueProblems: Doc<'problems'>[] = [];
+  const seen = new Set<string>();
+
+  for (const problem of problems) {
+    const key = String(problem._id);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    uniqueProblems.push(problem);
+  }
+
+  return uniqueProblems;
+}
+
 function composeHotFeed(
   freshLane: Doc<'problems'>[],
   rankedLane: Doc<'problems'>[],
@@ -266,6 +280,41 @@ export const list = query({
       const freshLane = filteredRecent.filter((problem) => now - problem.createdAt <= FRESH_WINDOW_MS);
       selected = composeHotFeed(freshLane, filteredRanked, numItems);
     }
+
+    const viewerUserId = await resolveViewerUserId(ctx, args.visitorId);
+    return Promise.all(selected.map((problem) => enrichProblem(ctx, problem, viewerUserId)));
+  },
+});
+
+/**
+ * List a broad candidate set for client-side personalized feed ranking.
+ */
+export const listFeedCandidates = query({
+  args: {
+    visitorId: v.optional(v.string()),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = Math.min(Math.max(args.limit ?? 120, 20), 200);
+    const candidateCount = Math.max(limit, 120);
+
+    const [recentCandidates, rankedCandidates] = await Promise.all([
+      ctx.db
+        .query('problems')
+        .withIndex('by_created_at')
+        .order('desc')
+        .take(candidateCount),
+      ctx.db
+        .query('problems')
+        .withIndex('by_pain_score')
+        .order('desc')
+        .take(candidateCount),
+    ]);
+
+    const selected = dedupeProblems([
+      ...filterProblems(recentCandidates, {}),
+      ...filterProblems(rankedCandidates, {}),
+    ]).slice(0, limit);
 
     const viewerUserId = await resolveViewerUserId(ctx, args.visitorId);
     return Promise.all(selected.map((problem) => enrichProblem(ctx, problem, viewerUserId)));

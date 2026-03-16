@@ -91,6 +91,8 @@ export interface ProblemWithMeta extends Problem {
   userVote: Vote | null;
   isBookmarked: boolean;
   canVote?: boolean;
+  matchPercentage?: number | null;
+  recommendationScore?: number;
 }
 
 export interface SavedProblemItem {

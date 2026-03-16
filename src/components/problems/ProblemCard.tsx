@@ -131,6 +131,10 @@ export function ProblemCard({ problem, variant = 'full', index = 0 }: ProblemCar
           </p>
         )}
 
+        {problem.matchPercentage && problem.matchPercentage > 50 ? (
+          <p className="text-xs font-medium text-problem-500">{problem.matchPercentage}% match</p>
+        ) : null}
+
         {/* Tags */}
         {problem.tags && problem.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">

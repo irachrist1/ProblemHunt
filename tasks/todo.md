@@ -2,7 +2,7 @@
 
 ## Current Status
 **Phase:** Phase 1 — Foundation MVP
-**Session:** Implementation complete — awaiting Convex project init + env setup
+**Session:** Implementation complete — email/password auth, cohesive landing page, and personalized feed are in place
 
 ---
 
@@ -14,8 +14,8 @@
 - [x] Configure Tailwind 3 with full design token system from doc 03
 - [x] Configure next.config.ts (ppr, reactCompiler, image domains)
 - [x] Inter variable font + global CSS
-- [ ] Connect Convex project (`npx convex dev` — user must run this)
-- [ ] Configure OAuth providers (Google + GitHub) — user must set up
+- [x] Connect Convex project (`npx convex dev` / codegen working locally)
+- [x] Keep authentication email/password only for MVP
 - [ ] Set up environment variables (see `.env.local.example`)
 - [ ] Cloudflare R2, Resend, Upstash Redis — Phase 1 deferred (not blocking MVP)
 
@@ -28,13 +28,13 @@
 - [x] `convex/_lib/slugs.ts` — Slug + username generation
 - [x] `convex/_lib/validation.ts` — Zod schemas for all mutations
 - [x] `convex/problems/mutations.ts` — createProblem, updateProblem, updateStatus, deleteProblem
-- [x] `convex/problems/queries.ts` — get, list (hot/new/top), trending, search, listByUser
+- [x] `convex/problems/queries.ts` — get, list, personalized feed candidates, trending, search, listByUser
 - [x] `convex/votes/mutations.ts` — toggleVote
 - [x] `convex/votes/queries.ts` — getUserVoteStatus, getVoteCounts
 - [x] `convex/comments/mutations.ts` — createComment, deleteComment, reactToComment
 - [x] `convex/comments/queries.ts` — listThreaded (2-level)
 - [x] `convex/users/mutations.ts` — updateProfile, createUserFromAuth
-- [x] `convex/users/queries.ts` — getCurrentUser, getByUsername, getById
+- [x] `convex/users/queries.ts` — getCurrentUser, getByUsername, getById, feed preferences
 - [x] `convex/notifications/queries.ts` — list, getUnreadCount
 - [x] `convex/notifications/mutations.ts` — markRead, markAllRead
 - [x] `convex/ai/actions.ts` — autoTagProblem (internal)
@@ -61,14 +61,15 @@
 ### Pages ✅
 - [x] Root layout (ConvexAuth providers + Inter font + Toaster)
 - [x] App layout (AppShell wrapper)
-- [x] Main feed `/` (sort tabs, skeleton, ProblemCard list)
+- [x] Main feed `/feed` (personalized ranking, skeleton, ProblemCard list)
 - [x] Problem detail `/p/[slug]` (SSR + skeleton)
 - [x] Submit wizard `/submit` (4-step)
 - [x] Explore `/explore` (search + category filter)
 - [x] User profile `/u/[username]`
 - [x] Notifications `/notifications`
 - [x] Auth: sign-in, sign-up
-- [x] Landing page `/` (marketing, all sections)
+- [x] Landing page `/` (single-surface treatment, focused motion, streamlined footer)
+- [x] Contact page `/contact`
 
 ### Phase 1 AI ✅
 - [x] `/api/ai/clarity` — Edge function, streamObject (Gemini 1.5 Flash)
@@ -81,9 +82,9 @@
 
 ## Next Steps (to make it run)
 1. Copy `.env.local.example` to `.env.local` and fill in values
-2. Run `npx convex dev` — creates project + generates `convex/_generated/`
-3. Configure OAuth apps (Google + GitHub), set redirect URLs
-4. Run `npm run dev` and test
+2. Verify Convex deployment env values before production deploy
+3. Run `npm run dev` and test critical flows
+4. Deploy with `npx convex deploy` plus the host platform build
 
 ---
 
@@ -102,3 +103,4 @@
 
 ## Completed Sessions
 - Session 1: Full Phase 1 implementation (Stages 1–10). 0 frontend TS errors. All 10 stages complete.
+- Session 2: Auth simplified to email/password, landing page cleaned and unified, feed recommendations added.
