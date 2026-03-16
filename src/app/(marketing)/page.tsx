@@ -1,9 +1,19 @@
 'use client';
 
+import { motion, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, TrendingUp, Zap, Users, BarChart3, Check } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+
+const HERO_HEADLINE = 'The place where the best problems find the builders who solve them.';
+
+function getInstantAwareTransition(
+  reducedMotion: boolean,
+  transition: Record<string, number | string>
+) {
+  return reducedMotion ? { duration: 0 } : transition;
+}
 
 // ---------- Nav Bar ----------
 
@@ -45,36 +55,67 @@ function NavBar() {
 // ---------- Hero ----------
 
 function HeroSection() {
+  const prefersReducedMotion = useReducedMotion();
+  const reducedMotion = prefersReducedMotion ?? false;
+  const words = useMemo(() => HERO_HEADLINE.split(' '), []);
+
   return (
     <section className="relative flex min-h-screen flex-col items-center justify-center border-b border-border-subtle px-6 pb-20 pt-40 text-center">
-      {/* Eyebrow badge */}
-      {/* <div className="mb-6 inline-flex items-center gap-1.5 rounded-full bg-problem-dim border border-problem-border px-3 py-1 text-xs text-problem-500 animate-pulse">
-        Now in Beta · Join 2,400+ builders →
-      </div> */}
-
-      {/* H1 */}
-      <h1
+      <motion.h1
         className="text-[56px] md:text-[72px] font-extrabold leading-none tracking-[-0.04em] max-w-4xl"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: {},
+          visible: {
+            transition: reducedMotion ? { duration: 0 } : { staggerChildren: 0.06 },
+          },
+        }}
       >
-        The place where the best{' '}
-        <span
-          style={{
-            backgroundImage: 'linear-gradient(135deg, #F97316, #FBBF24)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          problems
-        </span>{' '}
-        find the builders who solve them.
-      </h1>
+        {words.map((word, index) => {
+          const isProblems = word === 'problems';
+          const suffix = index === words.length - 1 ? '' : ' ';
 
-      {/* Subheadline */}
+          return (
+            <motion.span
+              key={`${word}-${index}`}
+              className="inline-block"
+              variants={{
+                hidden: reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  transition: getInstantAwareTransition(reducedMotion, {
+                    type: 'spring',
+                    stiffness: 280,
+                    damping: 22,
+                  }),
+                },
+              }}
+            >
+              {isProblems ? (
+                <span
+                  style={{
+                    backgroundImage: 'linear-gradient(135deg, #F97316, #FBBF24)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
+                  {word}
+                </span>
+              ) : (
+                word
+              )}
+              {suffix}
+            </motion.span>
+          );
+        })}
+      </motion.h1>
+
       <p className="mt-6 text-xl text-text-secondary max-w-xl">
         Browse a subreddit-style feed of real problems posted by real humans waiting to be solved.
       </p>
 
-      {/* CTA row */}
       <div className="mt-8 flex items-center gap-3 flex-wrap justify-center">
         <Button size="lg" asChild>
           <Link href="/explore">Browse Problems →</Link>
@@ -94,8 +135,7 @@ function HeroSection() {
         ))}
       </div>
 
-      {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-text-muted animate-bounce">
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-text-muted">
         <ChevronDown className="h-5 w-5" />
       </div>
     </section>
@@ -137,7 +177,7 @@ const DEMO_PROBLEMS = [
 
 function DemoProblemCard({ title, category, votes, tag }: (typeof DEMO_PROBLEMS)[0]) {
   return (
-    <div className="flex gap-3 rounded-xl border border-border-subtle bg-bg-primary p-4">
+    <div className="flex gap-3 rounded-xl border border-border-subtle bg-bg-primary p-4 shadow-[0_1px_0_rgba(255,255,255,0.04)]">
       <div className="flex-shrink-0 flex flex-col items-center justify-center w-10 gap-0.5">
         <div className="h-5 w-5 text-text-muted">▲</div>
         <span className="text-sm font-semibold text-text-secondary">{votes}</span>
@@ -156,20 +196,8 @@ function DemoProblemCard({ title, category, votes, tag }: (typeof DEMO_PROBLEMS)
 }
 
 function LiveFeedSection() {
-  const [visibleIdx, setVisibleIdx] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setVisibleIdx((prev) => (prev + 1) % DEMO_PROBLEMS.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const visible = [
-    DEMO_PROBLEMS[visibleIdx % DEMO_PROBLEMS.length],
-    DEMO_PROBLEMS[(visibleIdx + 1) % DEMO_PROBLEMS.length],
-    DEMO_PROBLEMS[(visibleIdx + 2) % DEMO_PROBLEMS.length],
-  ];
+  const prefersReducedMotion = useReducedMotion();
+  const reducedMotion = prefersReducedMotion ?? false;
 
   return (
     <section id="explore" className="border-y border-border-subtle bg-bg-secondary px-6 py-20">
@@ -177,11 +205,38 @@ function LiveFeedSection() {
         <h2 className="text-2xl font-semibold text-text-primary mb-8">
           Problems being posted right now
         </h2>
-        <div className="flex flex-col gap-3">
-          {visible.map((p) => (
-            <DemoProblemCard key={p.id} {...p} />
+        <motion.div
+          className="flex flex-col gap-3"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          variants={{
+            hidden: {},
+            visible: {
+              transition: reducedMotion ? { duration: 0 } : { staggerChildren: 0.1 },
+            },
+          }}
+        >
+          {DEMO_PROBLEMS.map((p) => (
+            <motion.div
+              key={p.id}
+              variants={{
+                hidden: reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  transition: getInstantAwareTransition(reducedMotion, {
+                    type: 'spring',
+                    stiffness: 280,
+                    damping: 22,
+                  }),
+                },
+              }}
+            >
+              <DemoProblemCard {...p} />
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
         <div className="mt-6">
           <Button variant="secondary" asChild>
             <Link href="/explore">Browse all problems →</Link>
