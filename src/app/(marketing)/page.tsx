@@ -3,7 +3,7 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, TrendingUp, Zap, Users, BarChart3, Check } from 'lucide-react';
+import { ChevronDown, Zap, BarChart3, Check } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 const HERO_HEADLINE = 'The place where the best problems find the builders who solve them.';
@@ -308,83 +308,6 @@ function ForBuildersSection() {
   );
 }
 
-// ---------- For Organizations ----------
-
-function ForOrgsSection() {
-  return (
-    <section className="border-b border-border-subtle px-6 py-20">
-      <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-        {/* Mockup left */}
-        <div className="rounded-2xl border border-border-subtle bg-bg-primary p-4 order-last md:order-first">
-          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border-subtle">
-            <div className="h-6 w-6 rounded-md bg-problem-500 flex items-center justify-center text-xs font-bold text-white">
-              A
-            </div>
-            <span className="text-sm font-medium text-text-primary">Acme Corp Workspace</span>
-            <span className="ml-auto text-xs text-text-muted">12 members</span>
-          </div>
-          <div className="space-y-2">
-            {[
-              { title: 'Onboarding too slow for new AEs', votes: 23, status: 'open' },
-              { title: 'No visibility into deal blockers before pipeline review', votes: 18, status: 'exploring' },
-              { title: 'Contract redlines take 3 weeks', votes: 15, status: 'proposed' },
-            ].map((p) => (
-              <div
-                key={p.title}
-                className="flex items-center gap-3 p-2.5 rounded-lg bg-bg-secondary border border-border-subtle"
-              >
-                <span className="text-xs font-semibold text-text-secondary min-w-[20px] text-center">
-                  {p.votes}
-                </span>
-                <span className="text-xs text-text-primary flex-1">{p.title}</span>
-                <span
-                  className={`text-xs px-1.5 py-0.5 rounded ${
-                    p.status === 'open'
-                      ? 'bg-status-open/10 text-status-open'
-                      : p.status === 'exploring'
-                      ? 'bg-status-exploring/10 text-status-exploring'
-                      : 'bg-status-proposed/10 text-status-proposed'
-                  }`}
-                >
-                  {p.status}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-3 block">
-            For Organizations
-          </span>
-          <h2 className="text-3xl font-bold text-text-primary mb-6">
-            Stop guessing what to build next
-          </h2>
-          <ul className="space-y-4">
-            {[
-              { icon: Users, label: 'Private workspaces for your team with role-based access' },
-              { icon: TrendingUp, label: 'Team voting surfaces the highest-pain problems first' },
-              { icon: BarChart3, label: 'Roadmap integration with Linear and Jira (coming soon)' },
-            ].map(({ icon: Icon, label }) => (
-              <li key={label} className="flex items-start gap-3">
-                <div className="mt-0.5 h-5 w-5 rounded-full bg-bg-tertiary border border-border-default flex items-center justify-center flex-shrink-0">
-                  <Icon className="h-3 w-3 text-text-secondary" strokeWidth={2} />
-                </div>
-                <span className="text-sm text-text-secondary">{label}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-8">
-            <Button variant="secondary" asChild>
-              <Link href="/explore">Explore problems →</Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 // ---------- Final CTA ----------
 
 function FinalCTA() {
@@ -416,11 +339,6 @@ const FOOTER_LINKS: Record<string, Array<{ label: string; href?: string }>> = {
     { label: 'Explore', href: '/explore' },
     { label: 'Submit Problem', href: '/submit' },
   ],
-  Community: [
-    { label: 'Discord' },
-    { label: 'Newsletter' },
-    { label: 'Blog' },
-  ],
   Developers: [
     { label: 'API (coming soon)' },
     { label: 'Changelog' },
@@ -430,7 +348,7 @@ const FOOTER_LINKS: Record<string, Array<{ label: string; href?: string }>> = {
     { label: 'About', href: '/about' },
     { label: 'Privacy', href: '/privacy' },
     { label: 'Terms', href: '/terms' },
-    { label: 'Contact' },
+    { label: 'Contact', href: '/contact' },
   ],
 };
 
@@ -438,7 +356,7 @@ function Footer() {
   return (
     <footer className="border-t border-border-subtle bg-bg-primary px-6 py-12">
       <div className="max-w-5xl mx-auto">
-        <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+        <div className="grid gap-8 mb-10 sm:grid-cols-2 md:grid-cols-3">
           {Object.entries(FOOTER_LINKS).map(([section, links]) => (
             <div key={section}>
               <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
@@ -455,12 +373,7 @@ function Footer() {
                         {label}
                       </Link>
                     ) : (
-                      <a
-                        href="#"
-                        className="text-sm text-text-secondary hover:text-text-primary transition-colors"
-                      >
-                        {label}
-                      </a>
+                      <span className="text-sm text-text-secondary">{label}</span>
                     )}
                   </li>
                 ))}
@@ -491,7 +404,6 @@ export default function LandingPage() {
       <HeroSection />
       <LiveFeedSection />
       <ForBuildersSection />
-      <ForOrgsSection />
       <FinalCTA />
       <Footer />
     </main>
