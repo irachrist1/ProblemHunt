@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, Edit3, TrendingUp, Wrench, Zap, Users, BarChart3, Check } from 'lucide-react';
+import { ChevronDown, TrendingUp, Zap, Users, BarChart3, Check } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 // ---------- Nav Bar ----------
@@ -33,26 +33,10 @@ function NavBar() {
           <span className="text-sm font-semibold text-text-primary">ProblemHunt</span>
         </Link>
 
-        {/* Center links */}
-        <div className="hidden md:flex items-center gap-6">
-          {['How It Works', 'Explore'].map((label) => (
-            <a
-              key={label}
-              href={`#${label.toLowerCase().replace(/\s+/g, '-')}`}
-              className="text-sm text-text-secondary hover:text-text-primary transition-colors"
-            >
-              {label}
-            </a>
-          ))}
-        </div>
-
         {/* Actions */}
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" asChild>
             <Link href="/auth/sign-in">Sign In</Link>
-          </Button>
-          <Button size="sm" asChild>
-            <Link href="/submit">Add Problem →</Link>
           </Button>
         </div>
       </div>
@@ -217,50 +201,6 @@ function LiveFeedSection() {
           <Button variant="secondary" asChild>
             <Link href="/explore">Browse all problems →</Link>
           </Button>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ---------- How It Works ----------
-
-const HOW_STEPS = [
-  {
-    icon: Edit3,
-    title: 'Post a Problem',
-    desc: 'Describe a real frustration or gap you experience. Our AI helps sharpen the framing so builders understand the pain.',
-  },
-  {
-    icon: TrendingUp,
-    title: 'Community Validates',
-    desc: 'Others upvote, share their own experience with "Me too", and rate the impact. Real signal, not noise.',
-  },
-  {
-    icon: Wrench,
-    title: 'Builders Find It',
-    desc: 'Indie hackers, startups, and product teams discover validated problems that are worth solving.',
-  },
-];
-
-function HowItWorksSection() {
-  return (
-    <section id="how-it-works" className="py-20 px-6">
-      <div className="max-w-5xl mx-auto">
-        <h2 className="text-3xl font-bold text-center text-text-primary mb-16">How It Works</h2>
-        <div className="grid md:grid-cols-3 gap-8 relative">
-          {/* Connector line */}
-          <div className="hidden md:block absolute top-8 left-[calc(16.67%+1rem)] right-[calc(16.67%+1rem)] h-px bg-border-subtle" />
-
-          {HOW_STEPS.map((step, i) => (
-            <div key={i} className="relative flex flex-col items-center text-center">
-              <div className="mb-4 h-16 w-16 rounded-2xl bg-problem-dim border border-problem-border flex items-center justify-center">
-                <step.icon className="h-7 w-7 text-problem-500" strokeWidth={1.5} />
-              </div>
-              <h3 className="text-base font-semibold text-text-primary mb-2">{step.title}</h3>
-              <p className="text-sm text-text-secondary leading-relaxed">{step.desc}</p>
-            </div>
-          ))}
         </div>
       </div>
     </section>
@@ -442,7 +382,6 @@ const FOOTER_LINKS: Record<string, Array<{ label: string; href?: string }>> = {
     { label: 'Submit Problem', href: '/submit' },
   ],
   Community: [
-    { label: 'Guidelines' },
     { label: 'Discord' },
     { label: 'Newsletter' },
     { label: 'Blog' },
@@ -516,7 +455,6 @@ export default function LandingPage() {
       <NavBar />
       <HeroSection />
       <LiveFeedSection />
-      <HowItWorksSection />
       <ForBuildersSection />
       <ForOrgsSection />
       <FinalCTA />
