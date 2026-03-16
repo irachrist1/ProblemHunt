@@ -10,16 +10,6 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '*.r2.cloudflarestorage.com',
       },
-      // Google OAuth avatars
-      {
-        protocol: 'https',
-        hostname: 'lh3.googleusercontent.com',
-      },
-      // GitHub avatars
-      {
-        protocol: 'https',
-        hostname: 'avatars.githubusercontent.com',
-      },
     ],
   },
 };

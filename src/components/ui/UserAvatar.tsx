@@ -43,7 +43,6 @@ export function UserAvatar({
           width={config.px}
           height={config.px}
           className="object-cover"
-          unoptimized={avatarUrl.startsWith('https://lh3.googleusercontent.com')}
         />
       </div>
     );

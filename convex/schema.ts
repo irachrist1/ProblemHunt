@@ -14,6 +14,11 @@ export default defineSchema(
       name: v.string(),
       username: v.string(),          // unique, slug-safe
       email: v.string(),
+      image: v.optional(v.string()),
+      emailVerificationTime: v.optional(v.number()),
+      phone: v.optional(v.string()),
+      phoneVerificationTime: v.optional(v.number()),
+      isAnonymous: v.optional(v.boolean()),
       avatarUrl: v.optional(v.string()),
       bio: v.optional(v.string()),
       role: v.optional(v.string()),  // e.g. "Developer", "Designer", "PM"
@@ -47,8 +52,9 @@ export default defineSchema(
       createdAt: v.number(),
       lastActiveAt: v.number(),
     })
+      .index('email', ['email'])
+      .index('phone', ['phone'])
       .index('by_username', ['username'])
-      .index('by_email', ['email'])
       .index('by_reputation', ['reputationScore']),
 
     // ─────────────────────────────────────────────────────────────
