@@ -340,7 +340,7 @@ const FOOTER_LINKS: Record<string, Array<{ label: string; href?: string }>> = {
   ],
   Developers: [
     { label: 'Changelog', href: '/changelog' },
-    { label: 'Status' },
+    { label: 'Status', href: '/status' },
   ],
   Company: [
     { label: 'About', href: '/about' },
